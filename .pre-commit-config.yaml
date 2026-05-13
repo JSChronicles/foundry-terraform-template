@@ -1,0 +1,57 @@
+repos:
+  - repo: local
+    hooks:
+      - id: terraform_fmt
+        name: terraform fmt
+        entry: terraform fmt -recursive
+        language: system
+        files: ""
+        pass_filenames: false
+      - id: terraform_validate
+        name: terraform validate
+        entry: terraform validate
+        language: system
+        files: ""
+        pass_filenames: false
+      - id: terraform_tflint
+        name: terraform tflint
+        entry: tflint --call-module-type=all --config=automation/.tflint.hcl -f compact
+        language: system
+        files: ""
+        pass_filenames: false
+  - repo: https://github.com/terraform-docs/terraform-docs
+    rev: "v0.23.0"
+    hooks:
+      - id: terraform-docs-go
+        language_version: "1.25.0"
+        args:
+          - --config
+          - automation/.terraform-docs.yml
+          - terraform
+  - repo: https://github.com/bridgecrewio/checkov.git
+    rev: "3.2.528"
+    hooks:
+      - id: checkov
+        args:
+          - --quiet
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.12
+    hooks:
+      # Run the linter. https://docs.astral.sh/ruff/linter/
+      - id: ruff-check
+        args: [ --fix ]
+      # Run the formatter. https://docs.astral.sh/ruff/formatter/
+      - id: ruff-format
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      # - id: check-case-conflict
+      #   name: '[Pre-Commit] Check Case Conflict'
+      - id: check-yaml
+        name: '[Pre-Commit] Check YAML Syntax'
+      - id: detect-private-key
+        name: '[Pre-Commit] Detect Private Key'
+      - id: end-of-file-fixer
+        name: '[Pre-Commit] End of File Fixer'
+      - id: trailing-whitespace
+        name: '[Pre-Commit] Remove Trailing Whitespaces'

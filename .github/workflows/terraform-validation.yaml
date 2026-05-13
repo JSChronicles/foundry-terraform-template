@@ -1,0 +1,144 @@
+---
+name: terraform validation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+concurrency:
+  group: terraform-validation-${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: terraform
+
+jobs:
+  terraform-validation:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+      actions: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 #v4.0.0
+        with:
+          terraform_version: 1.15.2
+
+      # - name: Configure AWS credentials
+      #   uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
+      #   with:
+      #     role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
+      #     aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt -check -diff
+        continue-on-error: true
+
+      - name: terraform-init
+        id: init
+        run: terraform init -reconfigure -no-color
+
+      - name: terraform-validate
+        id: validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -out=tfplan -lock=false -input=false
+        continue-on-error: true
+
+      - name: Upload plan artifact
+        if: steps.plan.outcome == 'success'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
+        with:
+          name: tfplan
+          path: terraform/tfplan
+          retention-days: 7
+
+      - name: Update Pull Request
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #v9.0.0
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+          PLAN_OUTCOME: ${{ steps.plan.outcome }}
+          GH_ACTOR: ${{ github.actor }}
+          GH_WORKFLOW: ${{ github.workflow }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const MARKER = '<!-- terraform-plan-comment -->'
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            })
+
+            // Find existing bot comments with our marker
+            const botComments = comments.filter(c =>
+              c.user.type === 'Bot' && c.body.includes(MARKER)
+            )
+
+            // Use the most recent bot comment
+            const latestBotComment = botComments.at(-1)
+
+            // Detect if a human commented after the bot
+            const hasHumanReplies =
+              latestBotComment &&
+              comments.some(c =>
+                new Date(c.created_at) > new Date(latestBotComment.created_at) &&
+                c.user.type !== 'Bot'
+              )
+
+            const planBody = process.env.PLAN?.trim()
+              ? process.env.PLAN
+              : 'No changes. Terraform did not produce a diff.'
+
+            const output = `
+            ${MARKER}
+            #### Terraform plan (${process.env.PLAN_OUTCOME})
+
+            <details>
+            <summary>Show plan</summary>
+
+            \`\`\`terraform
+            ${planBody}
+            \`\`\`
+
+            </details>
+
+            *Pusher: @${process.env.GH_ACTOR}, Workflow: \`${process.env.GH_WORKFLOW}\`*
+            `
+
+            if (latestBotComment && !hasHumanReplies) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: latestBotComment.id,
+                body: output
+              })
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: output
+              })
+            }
+
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1

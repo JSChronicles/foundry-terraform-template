@@ -1,0 +1,37 @@
+name: tf-lint
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tflint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6.0.2
+        name: Checkout
+
+      - uses: terraform-linters/setup-tflint@b480b8fcdaa6f2c577f8e4fa799e89e756bb7c93 #v6.2.2
+        name: Setup TFLint
+        # with:
+        #   tflint_version: v0.55.0
+
+      - name: Show version
+        run: tflint --version
+
+      - name: Init TFLint
+        run: tflint --init --config=${{ github.workspace }}/automation/.tflint.hcl
+
+      - name: Run TFLint
+        run: tflint --chdir=./terraform --config=${{ github.workspace }}/automation/.tflint.hcl -f compact

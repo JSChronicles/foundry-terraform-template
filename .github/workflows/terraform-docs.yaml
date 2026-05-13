@@ -1,0 +1,40 @@
+name: Generate terraform docs
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+permissions:
+  contents: write
+  
+concurrency:
+  group: terraform-docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  terraform-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6.0.2
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Render terraform docs
+        uses: terraform-docs/gh-actions@6de6da0cefcc6b4b7a5cbea4d79d97060733093c #v1.4.1
+        with:
+          working-dir: terraform
+          git-push: "true"
+          config-file: automation/.terraform-docs.yml

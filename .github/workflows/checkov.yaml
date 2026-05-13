@@ -1,0 +1,27 @@
+name: Checkov
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  checkov:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6.0.2
+
+      - name: Test with Checkov
+        id: checkov
+        uses: bridgecrewio/checkov-action@4048c972aae68d0b983a48bb3479aab2d877b898 #v12.3102.0
+        with:
+          directory: terraform/
+          framework: terraform
+          output_format: sarif
+          config_file: automation/checkov.yaml
