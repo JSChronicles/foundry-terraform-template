@@ -18,6 +18,10 @@ Prefer Terraform that is boring, explicit, and easy to review. Do not over-engin
 - Organize files by purpose, capability, lifecycle, or ownership boundary, not by provider resource type by default.
 - Keep locals close to the code that uses them. Use `locals.tf` only for values genuinely shared across the module.
 - Create modules only when they provide clear value: reuse, standardization, governance, complexity hiding, or a meaningful system boundary.
+- When Terraform creates generated or dynamic file content, prefer `templatefile`
+  with a `.tftpl` template over large inline heredocs or repetitive string/list
+  assembly. Keep Terraform responsible for resolving data and let the template
+  carry the file shape.
 - Use explicit input types, useful descriptions, validations where helpful, and `sensitive = true` where needed.
 - Expose useful outputs, not entire provider resources.
 - Configure providers in root modules. Child modules may declare provider requirements but should usually not configure providers.
