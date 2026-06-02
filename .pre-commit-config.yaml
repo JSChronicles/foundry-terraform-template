@@ -20,7 +20,7 @@ repos:
         files: ""
         pass_filenames: false
   - repo: https://github.com/terraform-docs/terraform-docs
-    rev: "v0.23.0"
+    rev: "v0.24.0"
     hooks:
       - id: terraform-docs-go
         language_version: "1.25.0"
@@ -29,13 +29,13 @@ repos:
           - automation/.terraform-docs.yml
           - terraform
   - repo: https://github.com/bridgecrewio/checkov.git
-    rev: "3.2.528"
+    rev: "3.2.529"
     hooks:
       - id: checkov
         args:
           - --quiet
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.12
+    rev: v0.15.14
     hooks:
       # Run the linter. https://docs.astral.sh/ruff/linter/
       - id: ruff-check
