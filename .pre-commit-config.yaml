@@ -29,13 +29,13 @@ repos:
           - automation/.terraform-docs.yml
           - terraform
   - repo: https://github.com/bridgecrewio/checkov.git
-    rev: "3.2.529"
+    rev: "3.3.2"
     hooks:
       - id: checkov
         args:
           - --quiet
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.14
+    rev: v0.15.19
     hooks:
       # Run the linter. https://docs.astral.sh/ruff/linter/
       - id: ruff-check
