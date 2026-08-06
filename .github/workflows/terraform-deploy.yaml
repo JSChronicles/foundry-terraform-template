@@ -88,4 +88,3 @@ jobs:
 
       - name: Terraform Apply (approved plan)
         run: terraform apply -input=false tfplan
-

@@ -16,7 +16,7 @@ env:
 
 permissions:
   contents: write
-  
+
 concurrency:
   group: terraform-docs-${{ github.ref }}
   cancel-in-progress: true
